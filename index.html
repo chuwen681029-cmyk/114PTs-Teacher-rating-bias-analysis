@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>教師評分相對拉力偏差分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            padding: 24px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 24px;
+            color: #111827;
+            margin-bottom: 5px;
+        }
+        .desc {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+            color: #6b7280;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        .pane {
+            display: none;
+        }
+        .pane.active {
+            display: block;
+        }
+        .chart-box {
+            position: relative;
+            height: 550px;
+            width: 100%;
+        }
+        .insight-box {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .insight-box ul {
+            margin: 5px 0 0 20px;
+            padding: 0;
+        }
+        .insight-box li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 教師評分相對偏差分析 (拉力指標)</h1>
+    <div class="desc">
+        本分析採用<strong>「同一學生、同一表單、不同老師給分差」</strong>的核心邏輯計算：<br>
+        針對每一位學生在特定評和表單收到的所有評分算出基準值，再計算個別老師給出的分數偏離值。 <br>
+        🟢 <strong>正值 (🟢)：</strong>代表該老師比評分同儕下手更寬容，傾向給出較高的相對分數。<br>
+        🔴 <strong>負值 (🔴)：</strong>代表該老師比評分同儕更為嚴格，傾向拉低同一個學生的相對得分。
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('clinical')">臨床表現總表分析</div>
+        <div class="tab" onclick="switchTab('academic')">學術活動總表分析</div>
+    </div>
+
+    <!-- Clinical Pane -->
+    <div id="clinical-pane" class="pane active">
+        <div class="chart-box">
+            <canvas id="clinicalChart"></canvas>
+        </div>
+        <div class="insight-box">
+            <strong>🔍 臨床站別核心發現：</strong>
+            <ul>
+                <li><strong>最大嚴格殺手：</strong> <code>PTV</code> 與 <code>PT3</code> 兩位老師，在評核同一個學生時，平均比其他同儕老師<strong>低了 6.14 分與 4.37 分</strong>。</li>
+                <li><strong>最大佛心評審：</strong> <code>PTY</code> 與 <code>PTB</code> 兩位老師，在評核同一個學生時，平均比其他同儕老師<strong>高出 4.84 分與 3.33 分</strong>。</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Academic Pane -->
+    <div id="academic-pane" class="pane">
+        <div class="chart-box">
+            <canvas id="academicChart"></canvas>
+        </div>
+        <div class="insight-box">
+            <strong>🔍 學術活動核心發現：</strong>
+            <ul>
+                <li><strong>最大嚴格殺手：</strong> <code>PTP</code> 老師最為嚴格，評核同一個學生報告時平均比同儕<strong>低了 5.35 分</strong>。</li>
+                <li><strong>最大佛心評審：</strong> <code>PTN</code> 與 <code>PTY</code> 老師給分最慷慨，平均比同儕<strong>高出 2.49 分與 2.15 分</strong>。</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(type) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+        
+        if(type === 'clinical') {
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('clinical-pane').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            document.getElementById('academic-pane').classList.add('active');
+        }
+    }
+
+    const clinData = [{"teacher": "PTV", "diff": -6.14}, {"teacher": "PT3", "diff": -4.37}, {"teacher": "PTQ", "diff": -3.65}, {"teacher": "PTC", "diff": -2.76}, {"teacher": "PTG", "diff": -1.67}, {"teacher": "PTF", "diff": -1.15}, {"teacher": "PTU", "diff": -0.95}, {"teacher": "PTS", "diff": -0.91}, {"teacher": "PTP", "diff": -0.87}, {"teacher": "PTN", "diff": 0.98}, {"teacher": "PTJ", "diff": 1.23}, {"teacher": "PT2", "diff": 1.45}, {"teacher": "PTA", "diff": 1.78}, {"teacher": "PTI", "diff": 2.1}, {"teacher": "PTD", "diff": 2.88}, {"teacher": "PTH", "diff": 2.94}, {"teacher": "PTB", "diff": 3.33}, {"teacher": "PTY", "diff": 4.84}];
+    const acadData = [{"teacher": "PTP", "diff": -5.35}, {"teacher": "PTU", "diff": -2.41}, {"teacher": "PTS", "diff": -1.55}, {"teacher": "PTG", "diff": -1.33}, {"teacher": "PT3", "diff": -1.32}, {"teacher": "PTV", "diff": -0.89}, {"teacher": "PTA", "diff": -0.58}, {"teacher": "PTW", "diff": 0.3}, {"teacher": "PTI", "diff": 0.57}, {"teacher": "PTQ", "diff": 1.23}, {"teacher": "PT2", "diff": 1.31}, {"teacher": "PTC", "diff": 1.34}, {"teacher": "PTJ", "diff": 1.38}, {"teacher": "PTB", "diff": 1.45}, {"teacher": "PTH", "diff": 1.83}, {"teacher": "PTY", "diff": 2.15}, {"teacher": "PTN", "diff": 2.48}];
+
+    function makeChart(canvasId, data, labelText) {
+        const labels = data.map(d => d.teacher);
+        const values = data.map(d => d.diff);
+        const colors = values.map(v => v >= 0 ? 'rgba(34, 197, 94, 0.75)' : 'rgba(239, 68, 68, 0.75)');
+        const borderColors = values.map(v => v >= 0 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)');
+
+        new Chart(document.getElementById(canvasId), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: labelText,
+                    data: values,
+                    backgroundColor: colors,
+                    borderColor: borderColors,
+                    borderWidth: 1,
+                    barThickness: 18
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: '給分偏差值 (分)', font: { weight: 'bold' } },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    y: {
+                        title: { display: true, text: '教師代號', font: { weight: 'bold' } }
+                    }
+                }
+            }
+        });
+    }
+
+    makeChart('clinicalChart', clinData, '臨床給分差');
+    makeChart('academicChart', acadData, '學術給分差');
+</script>
+
+</body>
+</html>
